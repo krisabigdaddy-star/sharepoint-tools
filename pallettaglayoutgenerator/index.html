@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Layout Tool for A4</title>
+    <!-- โหลดเฉพาะ library สำหรับสร้าง PDF เท่านั้น -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        /* CSS แบบเขียนเอง ไม่ต้องโหลดจากภายนอก (เบาและทำงานเร็วกว่า) */
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: #2563eb; /* Blue-600 */
+            color: white;
+            padding: 24px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .header p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 24px;
+        }
+
+        .card {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        input[type="range"] {
+            width: 200px;
+            cursor: pointer;
+        }
+
+        .slider-value {
+            color: #2563eb;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .drop-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .drop-zone:hover, .drop-zone.active {
+            border-color: #2563eb;
+            background-color: #eff6ff;
+        }
+
+        .drop-zone svg {
+            width: 48px;
+            height: 48px;
+            color: #2563eb;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background-color: #2563eb;
+            color: white;
+            font-weight: bold;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-primary:disabled {
+            background-color: #93c5fd;
+            cursor: not-allowed;
+        }
+
+        .status-area {
+            display: none; /* ซ่อนไว้ก่อน */
+            margin-bottom: 20px;
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            height: 10px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .progress-bar {
+            background-color: #2563eb;
+            height: 10px;
+            border-radius: 9999px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .info-box {
+            background-color: #fefce8;
+            border-left: 4px solid #facc15;
+            padding: 16px;
+            margin-top: 20px;
+            color: #854d0e;
+            font-size: 0.9rem;
+        }
+
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .text-red {
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 0.85rem;
+            background: none;
+            border: none;
+        }
+        
+        .hidden { display: none !important; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🖨️ เครื่องมือจัดเรียง QR Code ลง A4</h1>
+            <p>เวอร์ชัน Standalone (ตัดบรรทัดด้วย _ และ Wrap คำแบบสมบูรณ์)</p>
+        </div>
+
+        <div class="content">
+            
+            <!-- Settings Section -->
+            <div class="card">
+                <h3 style="margin-top:0; margin-bottom:10px;">⚙️ ตั้งค่าการจัดวาง</h3>
+                <div class="control-group">
+                    <label>จำนวนรูปต่อแถว:</label>
+                    <input type="range" id="colSlider" min="2" max="6" value="4">
+                    <span id="colValue" class="slider-value">4</span>
+                </div>
+                <p style="font-size: 0.8rem; color: #666; margin-top: 5px;">* แนะนำ 3-4 รูปต่อแถว กำลังสวยค่ะ</p>
+            </div>
+
+            <!-- Upload Section -->
+            <div id="dropZone" class="drop-zone">
+                <input type="file" id="fileInput" multiple accept="image/*" style="display:none;">
+                
+                <!-- Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+
+                <div style="font-size: 1.1rem; font-weight: 500;">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</div>
+                <div style="font-size: 0.9rem; color: #666; margin-top: 5px;">รองรับไฟล์ .jpg, .png (เลือกทีละหลายไฟล์ได้เลย)</div>
+            </div>
+
+            <!-- Status & Action -->
+            <div id="statusArea" class="status-area">
+                <div class="flex-between">
+                    <span id="fileCount" style="font-weight: 600;">เลือกแล้ว 0 ไฟล์</span>
+                    <button id="clearBtn" class="text-red">ล้างทั้งหมด</button>
+                </div>
+                
+                <div id="progressBarContainer" class="progress-container">
+                    <div id="progressBar" class="progress-bar"></div>
+                </div>
+
+                <button id="generateBtn" class="btn-primary">
+                    <span>สร้างไฟล์ PDF และดาวน์โหลด</span>
+                </button>
+            </div>
+
+            <!-- Info -->
+            <div class="info-box">
+                <b>💡 หมายเหตุ:</b> ระบบจะตัดบรรทัดใหม่เมื่อเจอ <b>_ (ขีดล่าง)</b> และจะพยายามตัดคำให้สวยงามโดยไม่ฉีกคำค่ะ
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Check if jsPDF is loaded
+        window.onload = function() {
+            if (!window.jspdf) {
+                // If blocked by preview, show alert but don't crash
+                console.warn("jsPDF might be blocked in this preview environment.");
+            }
+        };
+
+        const { jsPDF } = window.jspdf || { jsPDF: class {} }; // Fallback to prevent crash if library missing
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const colSlider = document.getElementById('colSlider');
+        const colValue = document.getElementById('colValue');
+        const statusArea = document.getElementById('statusArea');
+        const fileCount = document.getElementById('fileCount');
+        const generateBtn = document.getElementById('generateBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progressBarContainer = document.getElementById('progressBarContainer');
+
+        let selectedFiles = [];
+
+        // Slider logic
+        colSlider.addEventListener('input', (e) => {
+            colValue.textContent = e.target.value;
+        });
+
+        // File Input Logic
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('active');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('active');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('active');
+            if(e.dataTransfer.files) handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if(e.target.files) handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            if (files.length > 0) {
+                selectedFiles = [...selectedFiles, ...Array.from(files)];
+                updateUI();
+            }
+        }
+
+        clearBtn.addEventListener('click', () => {
+            selectedFiles = [];
+            fileInput.value = ''; 
+            updateUI();
+        });
+
+        function updateUI() {
+            if (selectedFiles.length > 0) {
+                statusArea.style.display = 'block';
+                dropZone.style.display = 'none'; 
+                fileCount.textContent = `พร้อมพิมพ์: ${selectedFiles.length} รูป`;
+            } else {
+                statusArea.style.display = 'none';
+                dropZone.style.display = 'block';
+            }
+        }
+
+        // --- Core PDF Generation Logic ---
+        generateBtn.addEventListener('click', async () => {
+            if (selectedFiles.length === 0) return;
+            if (!window.jspdf) {
+                alert("ระบบไม่สามารถโหลดเครื่องมือสร้าง PDF ได้ (อาจถูกบล็อกโดยอินเทอร์เน็ตหรือหน้า Preview) \n\nกรุณาดาวน์โหลดไฟล์นี้ไปเปิดในเครื่องคอมพิวเตอร์แทนค่ะ");
+                return;
+            }
+
+            // UI Loading state
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = `<span>กำลังประมวลผล...</span>`;
+            progressBarContainer.style.display = 'block';
+            
+            try {
+                const doc = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                const pageHeight = 297;
+                const pageWidth = 210;
+                const margin = 10;
+                
+                const columns = parseInt(colSlider.value);
+                const usableWidth = pageWidth - (margin * 2);
+                const cellWidth = usableWidth / columns;
+                const cellHeight = cellWidth * 1.5; // เพิ่มความสูงเล็กน้อยเผื่อข้อความหลายบรรทัด
+                
+                const rowsPerPage = Math.floor((pageHeight - (margin * 2)) / cellHeight);
+
+                let currentX = margin;
+                let currentY = margin;
+                let colCount = 0;
+                let rowCount = 0;
+
+                for (let i = 0; i < selectedFiles.length; i++) {
+                    const progress = Math.round(((i + 1) / selectedFiles.length) * 100);
+                    progressBar.style.width = `${progress}%`;
+
+                    const file = selectedFiles[i];
+                    const imgData = await processImageToCanvas(file);
+                    
+                    doc.addImage(imgData, 'JPEG', currentX, currentY, cellWidth, cellHeight);
+                    
+                    colCount++;
+                    currentX += cellWidth;
+
+                    if (colCount >= columns) {
+                        colCount = 0;
+                        currentX = margin;
+                        currentY += cellHeight;
+                        rowCount++;
+
+                        if (rowCount >= rowsPerPage && i < selectedFiles.length - 1) {
+                            doc.addPage();
+                            currentY = margin;
+                            rowCount = 0;
+                        }
+                    }
+                }
+
+                doc.save('qrcode-layout-a4-smart-wrap.pdf');
+                
+                generateBtn.innerHTML = `<span>✅ เสร็จเรียบร้อย!</span>`;
+                setTimeout(() => {
+                    generateBtn.disabled = false;
+                    generateBtn.innerHTML = `<span>สร้างไฟล์ PDF และดาวน์โหลด</span>`;
+                    progressBarContainer.style.display = 'none';
+                    progressBar.style.width = '0%';
+                }, 3000);
+
+            } catch (error) {
+                console.error(error);
+                alert("เกิดข้อผิดพลาด: " + error.message);
+                generateBtn.disabled = false;
+            }
+        });
+
+        function processImageToCanvas(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        // กำหนดขนาด Canvas ให้เหมาะสม (ความละเอียดสูงเพื่อให้ภาพชัด)
+                        const canvasWidth = 600; 
+                        const canvasHeight = 600 * 1.5; // เพิ่มความสูงเพื่อให้มีที่สำหรับข้อความยาวๆ
+                        
+                        canvas.width = canvasWidth;
+                        canvas.height = canvasHeight;
+                        
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = "#ffffff";
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                        // --- การตั้งค่าระยะห่าง (Layout Configuration) ---
+                        const borderMargin = 20; // ระยะห่างจากขอบ Canvas ถึงเส้นตัด (Guide Line)
+                        const contentPadding = 35; // ระยะห่างจากเส้นตัด เข้าไปหาตัว QR Code (padding ภายใน)
+                        
+                        // 1. คำนวณตำแหน่งเส้นตัด (Border / Cut Guide)
+                        const borderX = borderMargin;
+                        const borderY = borderMargin;
+                        const borderWidth = canvasWidth - (borderMargin * 2);
+                        const borderHeight = canvasHeight - (borderMargin * 2);
+
+                        // 2. คำนวณตำแหน่ง QR Code (ให้อยู่กลางแนวนอน และมีระยะห่างจากด้านบน)
+                        // ขนาด QR จะถูกบีบให้เล็กลงตาม padding
+                        const qrSize = borderWidth - (contentPadding * 2); 
+                        const qrX = borderX + contentPadding;
+                        const qrY = borderY + contentPadding;
+
+                        // 3. วาดเส้นตัด (Border)
+                        ctx.strokeStyle = "#000000"; // สีดำ
+                        ctx.lineWidth = 3; 
+                        ctx.strokeRect(borderX, borderY, borderWidth, borderHeight);
+
+                        // 4. วาดรูป QR Code
+                        ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
+
+                        // 5. จัดการข้อความ (Caption)
+                        let filename = file.name.replace(/\.[^/.]+$/, ""); // ตัดนามสกุลไฟล์ออก
+
+                        ctx.font = "bold 40px 'Sarabun', sans-serif"; 
+                        ctx.fillStyle = "#000000";
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "top";
+                        
+                        const textCenterX = canvasWidth / 2;
+                        let textCurrentY = qrY + qrSize + 30; 
+                        const lineHeight = 50; 
+                        const maxWidth = borderWidth - 40; // ความกว้างข้อความสูงสุด (แคบกว่ากรอบนิดหน่อย)
+
+                        // **Logic 1: แยกบรรทัดด้วย _ (Underscore)**
+                        let manualLines = filename.split('_');
+
+                        manualLines.forEach((manualLine) => {
+                            // **Logic 2: Wrap Text แบบรักษาคำ (Word Wrap)**
+                            // แยกด้วยช่องว่างเพื่อดูเป็นคำๆ
+                            let words = manualLine.split(' ');
+                            let currentLine = words[0];
+
+                            for (let i = 1; i < words.length; i++) {
+                                let word = words[i];
+                                let width = ctx.measureText(currentLine + " " + word).width;
+                                if (width < maxWidth) {
+                                    // ถ้าต่อคำแล้วยังไม่เกินความกว้าง ให้ต่อคำเข้าไป
+                                    currentLine += " " + word;
+                                } else {
+                                    // ถ้าเกินแล้ว ให้วาดบรรทัดปัจจุบัน แล้วเอาคำนี้ไปขึ้นบรรทัดใหม่
+                                    ctx.fillText(currentLine, textCenterX, textCurrentY);
+                                    textCurrentY += lineHeight;
+                                    currentLine = word;
+                                }
+                            }
+                            
+                            // เช็คกรณีสุดท้าย: ถ้าบรรทัดที่เหลือ (หรือคำเดียวที่ยาวมากๆ) มันยาวเกินกรอบจริงๆ
+                            // ให้ใช้ระบบตัดตัวอักษร (Character Wrap) เป็นตัวสำรอง
+                            if (ctx.measureText(currentLine).width > maxWidth) {
+                                let chars = currentLine.split('');
+                                let charLine = '';
+                                chars.forEach(char => {
+                                    if (ctx.measureText(charLine + char).width < maxWidth) {
+                                        charLine += char;
+                                    } else {
+                                        ctx.fillText(charLine, textCenterX, textCurrentY);
+                                        textCurrentY += lineHeight;
+                                        charLine = char;
+                                    }
+                                });
+                                ctx.fillText(charLine, textCenterX, textCurrentY);
+                            } else {
+                                // ถ้ายาวไม่เกิน ก็วาดปกติ
+                                ctx.fillText(currentLine, textCenterX, textCurrentY);
+                            }
+
+                            // จบท่อนที่แยกด้วย _ ให้ขึ้นบรรทัดใหม่เสมอ
+                            textCurrentY += lineHeight;
+                        });
+
+                        resolve(canvas.toDataURL('image/jpeg', 0.8));
+                    };
+                    img.onerror = reject;
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+    </script>
+</body>
+</html>
