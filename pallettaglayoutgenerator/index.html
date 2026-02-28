@@ -3,495 +3,340 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code Layout Tool for A4</title>
-    <!-- โหลดเฉพาะ library สำหรับสร้าง PDF เท่านั้น -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+    <title>Pallet Tag Generator</title>
     
+    <!-- 1. Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- 3. Babel (for JSX) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Font: Sarabun -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
+
     <style>
-        /* CSS แบบเขียนเอง ไม่ต้องโหลดจากภายนอก (เบาและทำงานเร็วกว่า) */
-        body {
-            font-family: 'Sarabun', sans-serif;
-            background-color: #f3f4f6;
-            margin: 0;
-            padding: 20px;
-            color: #333;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        .header {
-            background-color: #2563eb; /* Blue-600 */
-            color: white;
-            padding: 24px;
-        }
-
-        .header h1 {
-            margin: 0;
-            font-size: 1.5rem;
-        }
-
-        .header p {
-            margin: 5px 0 0 0;
-            opacity: 0.9;
-        }
-
-        .content {
-            padding: 24px;
-        }
-
-        .card {
-            background-color: #f9fafb;
-            border: 1px solid #e5e7eb;
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .control-group {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        input[type="range"] {
-            width: 200px;
-            cursor: pointer;
-        }
-
-        .slider-value {
-            color: #2563eb;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-
-        .drop-zone {
-            border: 2px dashed #cbd5e1;
-            border-radius: 12px;
-            padding: 40px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 20px;
-        }
-
-        .drop-zone:hover, .drop-zone.active {
-            border-color: #2563eb;
-            background-color: #eff6ff;
-        }
-
-        .drop-zone svg {
-            width: 48px;
-            height: 48px;
-            color: #2563eb;
-            margin-bottom: 10px;
-        }
-
-        .btn-primary {
-            width: 100%;
-            background-color: #2563eb;
-            color: white;
-            font-weight: bold;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: background-color 0.2s;
-        }
-
-        .btn-primary:hover {
-            background-color: #1d4ed8;
-        }
-
-        .btn-primary:disabled {
-            background-color: #93c5fd;
-            cursor: not-allowed;
-        }
-
-        .status-area {
-            display: none; /* ซ่อนไว้ก่อน */
-            margin-bottom: 20px;
-        }
-
-        .progress-container {
-            width: 100%;
-            background-color: #e5e7eb;
-            border-radius: 9999px;
-            height: 10px;
-            margin-bottom: 15px;
-            display: none;
-        }
-
-        .progress-bar {
-            background-color: #2563eb;
-            height: 10px;
-            border-radius: 9999px;
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-
-        .info-box {
-            background-color: #fefce8;
-            border-left: 4px solid #facc15;
-            padding: 16px;
-            margin-top: 20px;
-            color: #854d0e;
-            font-size: 0.9rem;
-        }
-
-        .flex-between {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .text-red {
-            color: #ef4444;
-            cursor: pointer;
-            font-size: 0.85rem;
-            background: none;
-            border: none;
-        }
-        
-        .hidden { display: none !important; }
-
+        body { font-family: 'Sarabun', sans-serif; }
     </style>
 </head>
-<body>
+<body class="bg-gray-100 min-h-screen">
 
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <h1>🖨️ เครื่องมือจัดเรียง QR Code ลง A4</h1>
-            <p>เวอร์ชัน Standalone (ตัดบรรทัดด้วย _ และ Wrap คำแบบสมบูรณ์)</p>
-        </div>
+    <div id="root"></div>
 
-        <div class="content">
+    <script type="text/babel">
+        // --- Icons ---
+        const IconPrinter = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+        );
+        const IconQrCode = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><path d="M3 14h7v7H3z"></path></svg>
+        );
+        const IconType = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+        );
+        const IconFileText = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        );
+        const IconExternalLink = () => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+        );
+
+        // --- Main Component ---
+        function App() {
+            const [itemCode, setItemCode] = React.useState('PART-12345-X');
+            const [itemName, setItemName] = React.useState('รายละเอียดสินค้า (Item Name)');
             
-            <!-- Settings Section -->
-            <div class="card">
-                <h3 style="margin-top:0; margin-bottom:10px;">⚙️ ตั้งค่าการจัดวาง</h3>
-                <div class="control-group">
-                    <label>จำนวนรูปต่อแถว:</label>
-                    <input type="range" id="colSlider" min="2" max="6" value="4">
-                    <span id="colValue" class="slider-value">4</span>
-                </div>
-                <p style="font-size: 0.8rem; color: #666; margin-top: 5px;">* แนะนำ 3-4 รูปต่อแถว กำลังสวยค่ะ</p>
-            </div>
+            const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=${encodeURIComponent(itemCode)}`;
 
-            <!-- Upload Section -->
-            <div id="dropZone" class="drop-zone">
-                <input type="file" id="fileInput" multiple accept="image/*" style="display:none;">
-                
-                <!-- Icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+            const handlePrintWindow = () => {
+                const safeFilename = itemCode.replace(/[^a-zA-Z0-9-_]/g, '-');
+                const pageTitle = `${safeFilename}_PalletTAG`;
+                const printContent = document.getElementById('printable-content');
 
-                <div style="font-size: 1.1rem; font-weight: 500;">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</div>
-                <div style="font-size: 0.9rem; color: #666; margin-top: 5px;">รองรับไฟล์ .jpg, .png (เลือกทีละหลายไฟล์ได้เลย)</div>
-            </div>
-
-            <!-- Status & Action -->
-            <div id="statusArea" class="status-area">
-                <div class="flex-between">
-                    <span id="fileCount" style="font-weight: 600;">เลือกแล้ว 0 ไฟล์</span>
-                    <button id="clearBtn" class="text-red">ล้างทั้งหมด</button>
-                </div>
-                
-                <div id="progressBarContainer" class="progress-container">
-                    <div id="progressBar" class="progress-bar"></div>
-                </div>
-
-                <button id="generateBtn" class="btn-primary">
-                    <span>สร้างไฟล์ PDF และดาวน์โหลด</span>
-                </button>
-            </div>
-
-            <!-- Info -->
-            <div class="info-box">
-                <b>💡 หมายเหตุ:</b> ระบบจะตัดบรรทัดใหม่เมื่อเจอ <b>_ (ขีดล่าง)</b> และจะพยายามตัดคำให้สวยงามโดยไม่ฉีกคำค่ะ
-            </div>
-
-        </div>
-    </div>
-
-    <script>
-        // Check if jsPDF is loaded
-        window.onload = function() {
-            if (!window.jspdf) {
-                // If blocked by preview, show alert but don't crash
-                console.warn("jsPDF might be blocked in this preview environment.");
-            }
-        };
-
-        const { jsPDF } = window.jspdf || { jsPDF: class {} }; // Fallback to prevent crash if library missing
-        const dropZone = document.getElementById('dropZone');
-        const fileInput = document.getElementById('fileInput');
-        const colSlider = document.getElementById('colSlider');
-        const colValue = document.getElementById('colValue');
-        const statusArea = document.getElementById('statusArea');
-        const fileCount = document.getElementById('fileCount');
-        const generateBtn = document.getElementById('generateBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const progressBar = document.getElementById('progressBar');
-        const progressBarContainer = document.getElementById('progressBarContainer');
-
-        let selectedFiles = [];
-
-        // Slider logic
-        colSlider.addEventListener('input', (e) => {
-            colValue.textContent = e.target.value;
-        });
-
-        // File Input Logic
-        dropZone.addEventListener('click', () => fileInput.click());
-
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('active');
-        });
-
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('active');
-        });
-
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('active');
-            if(e.dataTransfer.files) handleFiles(e.dataTransfer.files);
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            if(e.target.files) handleFiles(e.target.files);
-        });
-
-        function handleFiles(files) {
-            if (files.length > 0) {
-                selectedFiles = [...selectedFiles, ...Array.from(files)];
-                updateUI();
-            }
-        }
-
-        clearBtn.addEventListener('click', () => {
-            selectedFiles = [];
-            fileInput.value = ''; 
-            updateUI();
-        });
-
-        function updateUI() {
-            if (selectedFiles.length > 0) {
-                statusArea.style.display = 'block';
-                dropZone.style.display = 'none'; 
-                fileCount.textContent = `พร้อมพิมพ์: ${selectedFiles.length} รูป`;
-            } else {
-                statusArea.style.display = 'none';
-                dropZone.style.display = 'block';
-            }
-        }
-
-        // --- Core PDF Generation Logic ---
-        generateBtn.addEventListener('click', async () => {
-            if (selectedFiles.length === 0) return;
-            if (!window.jspdf) {
-                alert("ระบบไม่สามารถโหลดเครื่องมือสร้าง PDF ได้ (อาจถูกบล็อกโดยอินเทอร์เน็ตหรือหน้า Preview) \n\nกรุณาดาวน์โหลดไฟล์นี้ไปเปิดในเครื่องคอมพิวเตอร์แทนค่ะ");
-                return;
-            }
-
-            // UI Loading state
-            generateBtn.disabled = true;
-            generateBtn.innerHTML = `<span>กำลังประมวลผล...</span>`;
-            progressBarContainer.style.display = 'block';
-            
-            try {
-                const doc = new jsPDF({
-                    orientation: 'portrait',
-                    unit: 'mm',
-                    format: 'a4'
-                });
-
-                const pageHeight = 297;
-                const pageWidth = 210;
-                const margin = 10;
-                
-                const columns = parseInt(colSlider.value);
-                const usableWidth = pageWidth - (margin * 2);
-                const cellWidth = usableWidth / columns;
-                const cellHeight = cellWidth * 1.5; // เพิ่มความสูงเล็กน้อยเผื่อข้อความหลายบรรทัด
-                
-                const rowsPerPage = Math.floor((pageHeight - (margin * 2)) / cellHeight);
-
-                let currentX = margin;
-                let currentY = margin;
-                let colCount = 0;
-                let rowCount = 0;
-
-                for (let i = 0; i < selectedFiles.length; i++) {
-                    const progress = Math.round(((i + 1) / selectedFiles.length) * 100);
-                    progressBar.style.width = `${progress}%`;
-
-                    const file = selectedFiles[i];
-                    const imgData = await processImageToCanvas(file);
-                    
-                    doc.addImage(imgData, 'JPEG', currentX, currentY, cellWidth, cellHeight);
-                    
-                    colCount++;
-                    currentX += cellWidth;
-
-                    if (colCount >= columns) {
-                        colCount = 0;
-                        currentX = margin;
-                        currentY += cellHeight;
-                        rowCount++;
-
-                        if (rowCount >= rowsPerPage && i < selectedFiles.length - 1) {
-                            doc.addPage();
-                            currentY = margin;
-                            rowCount = 0;
-                        }
-                    }
+                if (!printContent) {
+                    alert("ไม่พบเนื้อหาที่จะพิมพ์");
+                    return;
                 }
 
-                doc.save('qrcode-layout-a4-smart-wrap.pdf');
+                const printWindow = window.open('', '_blank', 'width=1123,height=794');
                 
-                generateBtn.innerHTML = `<span>✅ เสร็จเรียบร้อย!</span>`;
-                setTimeout(() => {
-                    generateBtn.disabled = false;
-                    generateBtn.innerHTML = `<span>สร้างไฟล์ PDF และดาวน์โหลด</span>`;
-                    progressBarContainer.style.display = 'none';
-                    progressBar.style.width = '0%';
-                }, 3000);
+                if (!printWindow) {
+                    alert("กรุณาอนุญาต Pop-up (บล็อกเกอร์) ที่แถบ URL ด้านบน เพื่อให้สั่งพิมพ์ได้");
+                    return;
+                }
 
-            } catch (error) {
-                console.error(error);
-                alert("เกิดข้อผิดพลาด: " + error.message);
-                generateBtn.disabled = false;
-            }
-        });
-
-        function processImageToCanvas(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        // กำหนดขนาด Canvas ให้เหมาะสม (ความละเอียดสูงเพื่อให้ภาพชัด)
-                        const canvasWidth = 600; 
-                        const canvasHeight = 600 * 1.5; // เพิ่มความสูงเพื่อให้มีที่สำหรับข้อความยาวๆ
+                printWindow.document.open();
+                printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                    <head>
+                    <title>${pageTitle}</title>
+                    <script src="https://cdn.tailwindcss.com"><\/script>
+                    <style>
+                        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap');
                         
-                        canvas.width = canvasWidth;
-                        canvas.height = canvasHeight;
+                        body { 
+                            margin: 0; 
+                            padding: 0; 
+                            background-color: #f3f4f6;
+                            -webkit-print-color-adjust: exact; 
+                            print-color-adjust: exact;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            min-height: 100vh;
+                        }
+
+                        @page { 
+                            size: A4 landscape; 
+                            margin: 0; 
+                        }
+
+                        .font-sarabun { font-family: 'Sarabun', sans-serif; }
+                        .b-thick { border: 3px solid black; }
+                        .b-right { border-right: 3px solid black; }
+                        .b-bottom { border-bottom: 3px solid black; }
+                        .b-top { border-top: 3px solid black; }
+                        .rev-table { width: 100%; border-collapse: collapse; height: 100%; }
+                        .rev-table th, .rev-table td { border: 2px solid black; padding: 8px; text-align: center; }
+                        .rev-table th { background-color: #f3f4f6; font-weight: 800; text-transform: uppercase; }
                         
-                        const ctx = canvas.getContext('2d');
-                        ctx.fillStyle = "#ffffff";
-                        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                        // --- การตั้งค่าระยะห่าง (Layout Configuration) ---
-                        const borderMargin = 20; // ระยะห่างจากขอบ Canvas ถึงเส้นตัด (Guide Line)
-                        const contentPadding = 35; // ระยะห่างจากเส้นตัด เข้าไปหาตัว QR Code (padding ภายใน)
-                        
-                        // 1. คำนวณตำแหน่งเส้นตัด (Border / Cut Guide)
-                        const borderX = borderMargin;
-                        const borderY = borderMargin;
-                        const borderWidth = canvasWidth - (borderMargin * 2);
-                        const borderHeight = canvasHeight - (borderMargin * 2);
-
-                        // 2. คำนวณตำแหน่ง QR Code (ให้อยู่กลางแนวนอน และมีระยะห่างจากด้านบน)
-                        // ขนาด QR จะถูกบีบให้เล็กลงตาม padding
-                        const qrSize = borderWidth - (contentPadding * 2); 
-                        const qrX = borderX + contentPadding;
-                        const qrY = borderY + contentPadding;
-
-                        // 3. วาดเส้นตัด (Border)
-                        ctx.strokeStyle = "#000000"; // สีดำ
-                        ctx.lineWidth = 3; 
-                        ctx.strokeRect(borderX, borderY, borderWidth, borderHeight);
-
-                        // 4. วาดรูป QR Code
-                        ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
-
-                        // 5. จัดการข้อความ (Caption)
-                        let filename = file.name.replace(/\.[^/.]+$/, ""); // ตัดนามสกุลไฟล์ออก
-
-                        ctx.font = "bold 40px 'Sarabun', sans-serif"; 
-                        ctx.fillStyle = "#000000";
-                        ctx.textAlign = "center";
-                        ctx.textBaseline = "top";
-                        
-                        const textCenterX = canvasWidth / 2;
-                        let textCurrentY = qrY + qrSize + 30; 
-                        const lineHeight = 50; 
-                        const maxWidth = borderWidth - 40; // ความกว้างข้อความสูงสุด (แคบกว่ากรอบนิดหน่อย)
-
-                        // **Logic 1: แยกบรรทัดด้วย _ (Underscore)**
-                        let manualLines = filename.split('_');
-
-                        manualLines.forEach((manualLine) => {
-                            // **Logic 2: Wrap Text แบบรักษาคำ (Word Wrap)**
-                            // แยกด้วยช่องว่างเพื่อดูเป็นคำๆ
-                            let words = manualLine.split(' ');
-                            let currentLine = words[0];
-
-                            for (let i = 1; i < words.length; i++) {
-                                let word = words[i];
-                                let width = ctx.measureText(currentLine + " " + word).width;
-                                if (width < maxWidth) {
-                                    // ถ้าต่อคำแล้วยังไม่เกินความกว้าง ให้ต่อคำเข้าไป
-                                    currentLine += " " + word;
-                                } else {
-                                    // ถ้าเกินแล้ว ให้วาดบรรทัดปัจจุบัน แล้วเอาคำนี้ไปขึ้นบรรทัดใหม่
-                                    ctx.fillText(currentLine, textCenterX, textCurrentY);
-                                    textCurrentY += lineHeight;
-                                    currentLine = word;
-                                }
+                        @media print {
+                            body {
+                                background-color: white;
+                                display: block;
                             }
-                            
-                            // เช็คกรณีสุดท้าย: ถ้าบรรทัดที่เหลือ (หรือคำเดียวที่ยาวมากๆ) มันยาวเกินกรอบจริงๆ
-                            // ให้ใช้ระบบตัดตัวอักษร (Character Wrap) เป็นตัวสำรอง
-                            if (ctx.measureText(currentLine).width > maxWidth) {
-                                let chars = currentLine.split('');
-                                let charLine = '';
-                                chars.forEach(char => {
-                                    if (ctx.measureText(charLine + char).width < maxWidth) {
-                                        charLine += char;
-                                    } else {
-                                        ctx.fillText(charLine, textCenterX, textCurrentY);
-                                        textCurrentY += lineHeight;
-                                        charLine = char;
-                                    }
-                                });
-                                ctx.fillText(charLine, textCenterX, textCurrentY);
-                            } else {
-                                // ถ้ายาวไม่เกิน ก็วาดปกติ
-                                ctx.fillText(currentLine, textCenterX, textCurrentY);
+                            .no-print { display: none !important; }
+                            .paper-container {
+                                box-shadow: none !important;
+                                margin: 0 !important;
+                                width: 100% !important;
+                                height: 100% !important;
                             }
+                            .helper-bar { display: none !important; }
+                        }
 
-                            // จบท่อนที่แยกด้วย _ ให้ขึ้นบรรทัดใหม่เสมอ
-                            textCurrentY += lineHeight;
-                        });
+                        .helper-bar {
+                            width: 100%;
+                            background-color: #2563eb;
+                            color: white;
+                            padding: 15px;
+                            text-align: center;
+                            font-family: sans-serif;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                            margin-bottom: 20px;
+                            position: sticky;
+                            top: 0;
+                            z-index: 50;
+                        }
+                        .btn-print {
+                            background-color: white;
+                            color: #2563eb;
+                            border: none;
+                            padding: 8px 16px;
+                            border-radius: 4px;
+                            font-weight: bold;
+                            cursor: pointer;
+                            font-size: 14px;
+                            transition: background-color 0.2s;
+                        }
+                        .btn-print:hover { background-color: #eff6ff; }
+                    </style>
+                    </head>
+                    <body>
+                    <div class="helper-bar no-print">
+                        <div style="text-align: left;">
+                            <div style="font-weight: bold; font-size: 18px;">ขั้นตอนการบันทึก PDF / พิมพ์:</div>
+                            <div style="font-size: 14px; opacity: 0.9;">1. เลือกปลายทาง (Printer) เป็น <strong>"Save as PDF"</strong><br>2. กดปุ่ม Save เพื่อบันทึกไฟล์</div>
+                        </div>
+                        <button onclick="window.print()" class="btn-print">🖨️ สั่งพิมพ์ / Save PDF</button>
+                    </div>
+                    <div class="paper-container" style="background: white; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); width: 297mm; height: 210mm; position: relative; overflow: hidden;">
+                        ${printContent.innerHTML}
+                    </div>
+                    <script>
+                        window.onload = function() {
+                        setTimeout(function() {
+                            window.focus();
+                            window.print();
+                        }, 1000);
+                        };
+                    <\/script>
+                    </body>
+                </html>
+                `);
+                printWindow.document.close();
+            };
 
-                        resolve(canvas.toDataURL('image/jpeg', 0.8));
-                    };
-                    img.onerror = reject;
-                    img.src = event.target.result;
-                };
-                reader.readAsDataURL(file);
-            });
+            return (
+                <div className="flex flex-col font-sans min-h-screen">
+                    {/* Navbar */}
+                    <nav className="bg-gray-900 text-white p-4 shadow-md no-print flex justify-between items-center z-50 relative">
+                        <div className="flex items-center gap-2">
+                            <IconQrCode />
+                            <h1 className="text-xl font-bold">Pallet Tag Generator</h1>
+                        </div>
+                        <div className="flex gap-3">
+                            <button 
+                                onClick={handlePrintWindow}
+                                className="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-lg font-bold flex items-center gap-2 transition-colors shadow-lg cursor-pointer active:scale-95 border border-green-700"
+                            >
+                                <IconPrinter />
+                                <span>เปิดหน้าต่างพิมพ์ / Save PDF</span>
+                            </button>
+                        </div>
+                    </nav>
+
+                    <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative z-0" style={{height: 'calc(100vh - 64px)'}}>
+                        {/* Sidebar */}
+                        <aside className="w-full md:w-80 bg-white shadow-xl z-10 overflow-y-auto border-r border-gray-200">
+                            <div className="p-6 space-y-8">
+                                <div>
+                                    <h2 className="text-lg font-bold text-gray-800 border-b pb-2 mb-4">ข้อมูลสำหรับพิมพ์ (2 ช่อง)</h2>
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-bold text-gray-700 mb-1">1. ITEM CODE (QR)</label>
+                                        <div className="relative flex items-center">
+                                            <div className="absolute left-3 text-gray-400"><IconType /></div>
+                                            <input 
+                                                type="text" 
+                                                value={itemCode}
+                                                onChange={(e) => setItemCode(e.target.value)}
+                                                className="w-full border-2 border-gray-300 rounded-lg pl-10 pr-3 py-2 focus:border-blue-500 focus:ring-0 outline-none font-bold text-lg"
+                                                placeholder="ระบุรหัสสินค้า"
+                                            />
+                                        </div>
+                                        <p className="text-xs text-blue-600 mt-1">*ข้อมูลนี้จะถูกนำไปสร้าง QR Code ด้วย</p>
+                                    </div>
+
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-bold text-gray-700 mb-1">2. Item Name (ชื่อสินค้า)</label>
+                                        <div className="relative flex items-start">
+                                            <div className="absolute left-3 top-3 text-gray-400"><IconFileText /></div>
+                                            <textarea 
+                                                value={itemName}
+                                                onChange={(e) => setItemName(e.target.value)}
+                                                rows={3}
+                                                className="w-full border-2 border-gray-300 rounded-lg pl-10 pr-3 py-2 focus:border-blue-500 focus:ring-0 outline-none"
+                                                placeholder="ระบุชื่อสินค้า"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-blue-50 p-4 rounded-md border border-blue-200 text-sm text-blue-800 flex items-start gap-2">
+                                    <div className="mt-1"><IconExternalLink /></div>
+                                    <div>
+                                        <strong>คำแนะนำ:</strong> <br/>
+                                        ระบบใช้ <strong>Pop-up Window</strong> ในการพิมพ์<br/>
+                                        หากกดแล้วไม่มีอะไรเกิดขึ้น ให้กดอนุญาต Pop-up ที่แถบ URL ด้านบนครับ
+                                    </div>
+                                </div>
+                            </div>
+                        </aside>
+
+                        {/* Preview Area */}
+                        <main className="flex-1 bg-gray-600 p-8 overflow-auto flex justify-center items-start">
+                            <div 
+                                id="printable-content"
+                                className="bg-white shadow-2xl font-sarabun" 
+                                style={{ width: '297mm', height: '210mm', minWidth: '297mm', minHeight: '210mm', position: 'relative' }}
+                            >
+                                <style>{`
+                                    .font-sarabun { font-family: 'Sarabun', sans-serif; }
+                                    .b-thick { border: 3px solid black; }
+                                    .b-right { border-right: 3px solid black; }
+                                    .b-bottom { border-bottom: 3px solid black; }
+                                    .b-top { border-top: 3px solid black; }
+                                    .rev-table { width: 100%; border-collapse: collapse; height: 100%; }
+                                    .rev-table th, .rev-table td { border: 2px solid black; padding: 8px; text-align: center; }
+                                    .rev-table th { background-color: #f3f4f6; font-weight: 800; text-transform: uppercase; }
+                                `}</style>
+                                
+                                <div className="w-full h-full p-8 flex flex-col box-border">
+                                    <div className="flex-1 border-[4px] border-black flex flex-col p-1 relative">
+                                        
+                                        {/* ROW 1: ITEM INFO + QR (Height 45%) */}
+                                        <div className="flex b-bottom h-[45%]">
+                                            <div className="w-[25%] b-right p-2 flex flex-col items-center justify-center">
+                                                <img 
+                                                    src={qrCodeUrl} 
+                                                    alt="QR Code" 
+                                                    className="w-full h-auto object-contain max-h-[90%]"
+                                                />
+                                            </div>
+                                            <div className="w-[75%] flex flex-col">
+                                                <div className="h-1/2 b-bottom p-4 relative flex flex-col justify-center">
+                                                    <div className="absolute top-2 left-3 text-sm font-bold uppercase text-gray-500 tracking-wider">ITEM CODE</div>
+                                                    <div className="text-[80px] leading-none font-bold text-black tracking-tight overflow-hidden whitespace-nowrap mt-4 pl-4">
+                                                        {itemCode}
+                                                    </div>
+                                                </div>
+                                                <div className="h-1/2 p-4 relative flex items-center">
+                                                    <div className="absolute top-2 left-3 text-xs font-bold uppercase text-gray-400 tracking-wider">Item Name</div>
+                                                    <div className="text-4xl font-bold leading-tight line-clamp-3 w-full pl-4 pt-2">
+                                                        {itemName}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* ROW 2: LOT & LOCATOR (Expanded Height to 35%) */}
+                                        <div className="flex b-bottom h-[35%]">
+                                            <div className="w-1/2 b-right p-4 relative">
+                                                <div className="text-xl font-bold uppercase text-gray-600">LOT#</div>
+                                            </div>
+                                            <div className="w-1/2 p-4 relative flex flex-col justify-between">
+                                                <div className="text-xl font-bold uppercase text-gray-600">LOCATOR#</div>
+                                                <div className="flex items-end justify-center pb-2">
+                                                    <span className="text-4xl font-bold mr-6">PIA -</span>
+                                                    <div className="flex-1"></div>
+                                                    <span className="text-4xl font-bold ml-6">224-G</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* ROW 3: REV TABLE (Remaining Height, Reduced Rows) */}
+                                        <div className="flex flex-1">
+                                            <div className="w-full p-4 flex flex-col">
+                                                <table className="rev-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th className="w-[20%] text-xl">REV#</th>
+                                                            <th className="w-[20%] text-xl">QTY.</th>
+                                                            <th className="w-[20%] text-xl">DATE</th>
+                                                            <th className="w-[40%] text-xl">NOTE</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {[0, 1].map((rev) => (
+                                                            <tr key={rev}>
+                                                                <td className="font-bold text-left pl-6 text-xl">Rev# {rev}</td>
+                                                                <td></td>
+                                                                <td></td>
+                                                                <td></td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </main>
+                    </div>
+                </div>
+            );
         }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
